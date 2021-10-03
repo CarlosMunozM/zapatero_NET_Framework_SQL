@@ -1,0 +1,415 @@
+﻿@model List<ZapateroCM.Models.Empleado>
+@{
+    ViewBag.Title = "Index";
+}
+
+<div class="row">
+    <div class="col-xs-6 col-sm-6 col-md-6">
+        <div id="divZapatero">
+
+            <div class="form-group">
+                <h3 class="text-center"> Zapatero </h3>
+            </div>
+
+            <div class="form-group row">
+                <label class="col-form-label col-sm-3">Empleado</label>
+                <div class="col-sm-5">
+                    <select class="form-control col-cm-2" name="sltEmpleado" id="sltEmpleado" required>
+                        <option></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-form-label col-sm-3">Proveedor</label>
+                <div class="col-sm-5">
+                    <select class="form-control" name="sltProveedor" id="sltProveedor" required>
+                        <option></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-form-label col-sm-3">Fecha Ingreso</label>
+                <div class="col-sm-5">
+                    <input class="form-control" type="date" name="txtFechaIngreso" id="txtFechaIngreso" required />
+                </div>
+            </div>
+
+            <button class="btn btn-success pull-right" type="button" id="btnAgregarProducto">
+                <span class="glyphicon glyphicon-plus"> Agregar Producto</span>
+            </button>
+            <br /><br />
+            <table id="tabla_productos" class="table table-bordered">
+                <thead style="background-color: black; color: white">
+                    <tr>
+                        <th hidden>ID</th>
+                        <th>Tipo Zapato</th>
+                        <th>Cantidad</th>
+                    </tr>
+
+                </thead>
+                <tbody style="background-color:white">
+                    <!--
+                    <tr class="fila">
+                        <th class="tipo">Deportivo</th>
+                        <th class="cantidad" style="text-align:right">2</th>
+                    </tr>
+                    <tr class="fila">
+                        <th class="tipo">Casual</th>
+                        <th class="cantidad" style="text-align:right">4</th>
+                    </tr>
+                    <tr class="fila">
+                        <th class="tipo" >Formal</th>
+                        <th class="cantidad" style="text-align:right">3</th>
+                    </tr>
+                    -->
+                </tbody>
+            </table>
+
+            <div class="form-group row">
+                <label class="col-form-label col-sm-7" style="text-align:right">Total:</label>
+                <div class="col-sm-5">
+                    <input disabled class="form-control" id="txtTotal" style="border: none; text-align:right" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <input id="btnGuardar" type="button" class="btn btn-primary" value="Guardar">
+            </div>
+            <div class="col-sm-offset-2 col-sm-8">
+                <p class="mensaje"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <center><h3 class="modal-title" id="exampleModalLabel">Producto</h3></center>
+            </div>
+            <div class="modal-body">
+                <div class="form-group row">
+                    <label class="col-form-label col-sm-3">Tipo Zapato</label>
+                    <div class="col-sm-5">
+                        <select class="form-control" id="sltTipoZapato" name="sltTipoZapato">
+                            <option></option>
+
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-form-label col-sm-3">Cantidad</label>
+                    <div class="col-sm-5">
+                        <input class="form-control" type="number" name="txtCantidad" id="txtCantidad" required />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnCerrar" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnGrabar" class="btn btn-primary">Grabar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        toastr.options = {
+            "positionClass": "toast-bottom-right",
+            "showMethod": "show",
+            "hideMethod": "hide"
+        };
+
+        $("#btnGuardar").click(function () {
+            if (validarGuardar()) {
+                if (calcularTotal() >= 10) {
+                    var productos = '';
+                    var tableRows = document.querySelectorAll('#tabla_productos tr.fila');
+
+                    for (var i = 0; i < tableRows.length; i++) {
+                        var row = tableRows[i];
+                        var id = row.querySelector('.id');
+                        var cantidad = row.querySelector('.cantidad');
+
+                        if (i != tableRows.length - 1)
+                            productos += id.innerText + "," + cantidad.innerText + "|";
+                        else
+                            productos += id.innerText + "," + cantidad.innerText;
+                    }
+
+
+                    var datos = {
+                        'idEmpleado': $('#sltEmpleado').val(),
+                        'idProveedor': $('#sltProveedor').val(),
+                        'fecha': $('#txtFechaIngreso').val(),
+                        'productos': productos,
+                        'cantidadTotal': $('#txtTotal').val()
+                    };
+
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        data: datos,
+                        url: "@Url.Content("~/Zapatero/guardarOrden")",
+                        success: function (result) {
+                            if (result.success) {
+                                toastr.success("Guardado");
+                                limpiar();
+                            } else {
+                                toastr.error(result.mensaje);
+                            }
+                        }
+                    });
+
+                } else
+                    toastr.error('La orden debe tener mínimo 10 pares de zapatos');
+            }
+        });
+
+        $("#btnAgregarProducto").click(function () {
+            $("#modal").modal('show');
+        });
+
+        $("#btnCerrar").click(function () {
+            $("#modal").modal('hide');
+        });
+
+        $("#btnGrabar").click(function () {
+            if (validarGrabar()) {
+                agregarProducto($('#sltTipoZapato').val(), $('select[id="sltTipoZapato"] option:selected').text(), $("#txtCantidad").val());
+                $("#modal").modal('hide');
+                $("#sltTipoZapato").val('');
+                $("#txtCantidad").val('');
+            }
+        });
+
+        llenarEmpleado();
+        llenarProveedor();
+        llenarZapatos();
+        $('#txtTotal').val(calcularTotal());
+    });
+
+    function llenarEmpleado() {
+        $.ajax({
+            type: "POST",
+            url: "@Url.Content("~/Zapatero/listarEmpleados")",
+            success: function (result) {
+                var obj = jQuery.parseJSON(result);
+
+                for (var i in obj) {
+                    var empleado = obj[i];
+                    $("#sltEmpleado").append('<option value="' + empleado.IdEmpleado + '">' + empleado.Nombres + ' ' + empleado.Apellidos + '</option>');
+                }
+            }
+        });
+    }
+
+    function llenarProveedor() {
+            $.ajax({
+            type: "POST",
+            url: "@Url.Content("~/Zapatero/listarProveedores")",
+            success: function (result) {
+                var obj = jQuery.parseJSON(result);
+
+                for (var i in obj) {
+                    var proveedor = obj[i];
+                    $("#sltProveedor").append('<option value="' + proveedor.IdProveedor + '">' + proveedor.Nombre +'</option>');
+                }
+            }
+        });
+    }
+
+    function llenarZapatos() {
+            $.ajax({
+            type: "POST",
+            url: "@Url.Content("~/Zapatero/listarZapatos")",
+            success: function (result) {
+                var obj = jQuery.parseJSON(result);
+                for (var i in obj) {
+                    var zapato = obj[i];
+                    $("#sltTipoZapato").append('<option value="' + zapato.IdTipoZapato + '">' + zapato.TipoZapato1 +'</option>');
+                }
+            }
+        });
+    }
+
+    function agregarProducto(idTipoZapato, tipoZapato, cantidadZapato) {
+
+        var mensaje;
+
+        if (!buscarTipoZapato(tipoZapato)) {
+            mensaje = validarCantidad(tipoZapato, parseInt(cantidadZapato));
+            if (mensaje == 'ok') {
+                var htmlTags = '<tr class="fila">' +
+                    '<th class="id" hidden>' + idTipoZapato + '</th>' +
+                    '<th class="tipo" >' + tipoZapato + '</th>' +
+                    '<th class="cantidad" style="text-align:right">' + cantidadZapato + '</th>' +
+                    '</tr>';
+
+                $('#tabla_productos tbody').append(htmlTags);
+                $('#txtTotal').val(calcularTotal());
+            } else
+                toastr.error(mensaje);
+        }
+        else {
+            mensaje = validarCantidad(tipoZapato, parseInt(cantidadZapato));
+            if (mensaje == 'ok') {
+                var tableRows = document.querySelectorAll('#tabla_productos tr.fila');
+
+                for (var i = 0; i < tableRows.length; i++) {
+                    var row = tableRows[i];
+                    var id = row.querySelector('.id');
+                    var tipo = row.querySelector('.tipo');
+                    var cantidad = row.querySelector('.cantidad');
+
+                    if (tipo.innerText == tipoZapato) {
+                        cantidad.innerText = parseInt(cantidad.innerText) + parseInt(cantidadZapato);
+                    }
+                }
+                $('#txtTotal').val(calcularTotal());
+            } else
+                toastr.error(mensaje);
+        }
+    }
+
+    function buscarTipoZapato(tipoZapato) {
+
+        var b = false;
+        var tableRows = document.querySelectorAll('#tabla_productos tr.fila');
+
+        for (var i = 0; i < tableRows.length; i++) {
+            var row = tableRows[i];
+            var tipo = row.querySelector('.tipo');
+
+            if (tipo.innerText == tipoZapato) {
+                b = true;
+                break;
+            }
+        }
+
+        return b;
+    }
+
+    function validarCantidad(tipoZapato, cantidad) {
+        var b = "ok";
+
+        cantidad += obtenerCantidad(tipoZapato);
+
+        if (tipoZapato == 'Deportivo') {
+            if (cantidad <= 20)
+                b = 'ok';
+            else
+                b = 'Solo se pueden ordenar máximo 20 pares de zapatos deportivos';
+        } else if (tipoZapato == 'Casuales') {
+            if (cantidad <= 40)
+                b = 'ok';
+            else
+                b = 'Solo se pueden ordenar máximo 40 pares de zapatos casuales';
+        } else if (tipoZapato == 'Formales') {
+            if (cantidad <= 100)
+                b = 'ok';
+            else
+                b = 'Solo se pueden ordenar máximo 100 pares de zapatos formales';
+        }
+        return b;
+    }
+
+    function obtenerCantidad(tipoZapato) {
+        var cant = 0;
+        var tableRows = document.querySelectorAll('#tabla_productos tr.fila');
+
+        for (var i = 0; i < tableRows.length; i++) {
+            var row = tableRows[i];
+            var tipo = row.querySelector('.tipo');
+            var cantidad = row.querySelector('.cantidad');
+
+            if (tipo.innerText == tipoZapato) {
+                cant = cantidad.innerText;
+                break;
+            }
+        }
+        return parseInt(cant);
+    }
+
+    function calcularTotal() {
+
+        var cant = 0;
+        var tableRows = document.querySelectorAll('#tabla_productos tr.fila');
+
+        for (var i = 0; i < tableRows.length; i++) {
+            var row = tableRows[i];
+            var cantidad = row.querySelector('.cantidad');
+            cant += parseInt(cantidad.innerText);
+        }
+        return cant;
+    }
+
+    function limpiar(){
+        $('#sltEmpleado').val("");
+        $('#sltProveedor').val("");
+        $('#txtFechaIngreso').val("");
+        $('#tabla_productos .fila').remove();
+        $('#txtTotal').val(0);
+    }
+
+    function validarGuardar() {
+
+        var b = false;
+
+        if ($("#sltEmpleado").val() == "") {
+            b = false;
+            $('#sltEmpleado').focus();
+            toastr.warning("Seleccione un empleado");
+        }
+        else {
+            b = true;
+
+            if ($("#sltProveedor").val() == "") {
+                b = false;
+                $('#sltProveedor').focus();
+                toastr.warning("Seleccione un proveedor");
+            }
+            else {
+                b = true;
+
+                if ($("#txtFechaIngreso").val() == "") {
+                    b = false;
+                    $('#txtFechaIngreso').focus();
+                    toastr.warning("Seleccione una fecha");
+                }
+                else {
+                    b = true;
+                }
+            }
+        }
+
+        return b;
+    }
+
+    function validarGrabar() {
+
+        var b = false;
+
+        if ($("#sltTipoZapato").val() == "") {
+            $('#sltTipoZapato').focus();
+            toastr.warning("Seleccione una tipo de zapato");
+        } else {
+            b = true;
+
+            if ($("#txtCantidad").val() == 0) {
+                b = false;
+                $('#txtCantidad').focus();
+                toastr.warning("Ingrese una cantidad");
+            } else
+                b = true;
+        }
+
+        return b;
+    }
+</script>
