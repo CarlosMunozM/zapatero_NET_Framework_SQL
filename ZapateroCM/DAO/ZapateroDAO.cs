@@ -16,7 +16,8 @@ namespace ZapateroCM.DAO
         {
 
             var empleado = new List<Empleado>();
-            string cadena = "SELECT * FROM Empleado";
+            //string cadena = "SELECT * FROM Empleado";
+            string cadena = "EXEC listarEmpleados";
 
             try
             {
@@ -37,7 +38,8 @@ namespace ZapateroCM.DAO
         {
 
             var proveedor = new List<Proveedor>();
-            string cadena = "SELECT * FROM Proveedor";
+            //string cadena = "SELECT * FROM Proveedor";
+            string cadena = "EXEC listarProveedores";
 
             try
             {
@@ -60,7 +62,8 @@ namespace ZapateroCM.DAO
         {
 
             var tipoZapato = new List<TipoZapato>();
-            string cadena = "SELECT IdTipoZapato, TipoZapato AS TipoZapato1, Estado, FechaModificacion  FROM TipoZapato WHERE Estado = 1";
+            //string cadena = "SELECT IdTipoZapato, TipoZapato AS TipoZapato1, Estado, FechaModificacion  FROM TipoZapato WHERE Estado = 1";
+            string cadena = "EXEC listarZapatos";
 
             try
             {
@@ -81,17 +84,20 @@ namespace ZapateroCM.DAO
         {
 
             int idOrden = 0, r = 0;
-
+            /*
             string cadena = "" + cabeceraOrden.IdEmpleado +
                             "," + cabeceraOrden.IdProveedor +
                             ",'" + cabeceraOrden.FechaIngreso.ToString("dd-MM-yyyy") +
                             "'," + cabeceraOrden.TotalPares + "";
+            */
+            
 
             try
             {
                 using (var contenedor = new ZapateroModelo())
                 {
-                    r = contenedor.Database.ExecuteSqlCommand("INSERT INTO CabeceraOrden (IdEmpleado, IdProveedor, FechaIngreso, TotalPares) VALUES(" + cadena + ")");
+                    //r = contenedor.Database.ExecuteSqlCommand("INSERT INTO CabeceraOrden (IdEmpleado, IdProveedor, FechaIngreso, TotalPares) VALUES(" + cadena + ")");
+                    r = contenedor.Database.ExecuteSqlCommand("EXEC insertarCabeceraOrden @idEmpleado = "+ cabeceraOrden.IdEmpleado +", @idProveedor = "+ cabeceraOrden.IdProveedor +", @fecha = '"+ cabeceraOrden.FechaIngreso.ToString("dd-MM-yyyy") + "', @total = "+ cabeceraOrden.TotalPares +";");
                     if (r == 1)
                     {
                         string cnnString = System.Configuration.ConfigurationManager.ConnectionStrings["ZapateroModelo"].ConnectionString;
@@ -99,8 +105,8 @@ namespace ZapateroCM.DAO
                         SqlConnection cnn = new SqlConnection(cnnString);
                         SqlCommand cmd = new SqlCommand();
                         cnn.Open();
-
-                        SqlCommand command = new SqlCommand("SELECT TOP 1 IdOrden FROM CabeceraOrden ORDER BY IdOrden DESC", cnn);
+                        //cadena = "SELECT TOP 1 IdOrden FROM CabeceraOrden ORDER BY IdOrden DESC";
+                        SqlCommand command = new SqlCommand("EXEC ultimaOrden", cnn);
                         //command.Parameters.AddWithValue("@zip", "india");
                         // int result = command.ExecuteNonQuery();
                         using (SqlDataReader reader = command.ExecuteReader())
@@ -129,15 +135,17 @@ namespace ZapateroCM.DAO
 
             bool b = false;
             int r = 0;
+            /*
             string cadena = "" + detalleOrden.IdOrden +
                            "," + detalleOrden.IdTipoZapato +
                            "," + detalleOrden.Cantidad + "";
-
+            */
             try
             {
                 using (var contenedor = new ZapateroModelo())
                 {
-                    r = contenedor.Database.ExecuteSqlCommand("INSERT INTO DetalleOrden (IdOrden, IdTipoZapato, Cantidad) VALUES(" + cadena + ")");
+                    //r = contenedor.Database.ExecuteSqlCommand("INSERT INTO DetalleOrden (IdOrden, IdTipoZapato, Cantidad) VALUES(" + cadena + ")");
+                    r = contenedor.Database.ExecuteSqlCommand("EXEC insertarDetalleOrden @idOrden = "+ detalleOrden.IdOrden +", @idTipoZapato = "+ detalleOrden.IdTipoZapato +", @cantidad = "+ detalleOrden.Cantidad +";");
                     if (r == 1)
                         b = true;
                 }
